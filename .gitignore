@@ -4,6 +4,12 @@ obj/
 *.nupkg
 *.snupkg
 
+# API keys and secrets
+nuget_api_key
+*.key
+.env
+.env.local
+
 # Visual Studio
 .vs/
 *.user
