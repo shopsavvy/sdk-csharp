@@ -1,0 +1,27 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>netstandard2.0</TargetFramework>
+    <PackageId>ShopSavvy.Sdk</PackageId>
+    <Version>1.0.0</Version>
+    <Authors>ShopSavvy by Monolith Technologies, Inc.</Authors>
+    <Company>ShopSavvy by Monolith Technologies, Inc.</Company>
+    <Product>ShopSavvy Data API SDK</Product>
+    <Description>Official C# SDK for ShopSavvy Data API - Access product data, pricing, and price history across thousands of retailers and millions of products.</Description>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <PackageProjectUrl>https://shopsavvy.com/data</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/shopsavvy/sdk-csharp</RepositoryUrl>
+    <PackageTags>shopsavvy;product-data;pricing;e-commerce;shopping;price-comparison;retail;api-client</PackageTags>
+    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+    <LangVersion>8.0</LangVersion>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.CSharp" Version="4.7.0" />
+    <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
+    <PackageReference Include="System.Net.Http" Version="4.3.4" />
+    <PackageReference Include="System.Text.RegularExpressions" Version="4.3.1" />
+  </ItemGroup>
+
+</Project>

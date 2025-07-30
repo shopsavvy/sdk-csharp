@@ -1,0 +1,19 @@
+# Build results
+bin/
+obj/
+*.nupkg
+*.snupkg
+
+# Visual Studio
+.vs/
+*.user
+*.suo
+*.cache
+*.csproj.user
+
+# Rider
+.idea/
+
+# OS generated files
+.DS_Store
+Thumbs.db
