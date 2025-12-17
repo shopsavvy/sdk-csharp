@@ -11,15 +11,15 @@ namespace ShopSavvy.DataApi
 {
     /// <summary>
     /// Official C# client for ShopSavvy Data API
-    /// 
+    ///
     /// Provides access to product data, pricing information, and price history
     /// across thousands of retailers and millions of products.
     /// </summary>
     /// <example>
     /// <code>
     /// var client = new ShopSavvyDataApiClient("ss_live_your_api_key_here");
-    /// var product = await client.GetProductDetailsAsync("012345678901");
-    /// Console.WriteLine($"Product: {product.Data.Name}");
+    /// var product = await client.GetProductsAsync("012345678901");
+    /// Console.WriteLine($"Product: {product.Data[0].Title}");
     /// </code>
     /// </example>
     public class ShopSavvyDataApiClient : IDisposable
@@ -71,101 +71,163 @@ namespace ShopSavvy.DataApi
             };
 
             _httpClient.DefaultRequestHeaders.Add("Authorization", $"Bearer {_config.ApiKey}");
-            _httpClient.DefaultRequestHeaders.Add("User-Agent", "ShopSavvy-CSharp-SDK/1.0.0");
+            _httpClient.DefaultRequestHeaders.Add("User-Agent", $"ShopSavvy-CSharp-SDK/{ShopSavvySdk.Version}");
         }
 
         /// <summary>
         /// Look up product details by identifier
         /// </summary>
-        /// <param name="identifier">Product identifier (barcode, ASIN, URL, model number, or ShopSavvy product ID)</param>
-        /// <param name="format">Response format ('json' or 'csv')</param>
-        /// <returns>Product details</returns>
-        public async Task<ApiResponse<ProductDetails>> GetProductDetailsAsync(string identifier, string? format = null)
+        /// <param name="id">Product identifier (barcode, ASIN, URL, model number, or ShopSavvy product ID)</param>
+        /// <returns>Product details array</returns>
+        public async Task<ApiResponse<ProductDetails[]>> GetProductsAsync(string id)
         {
-            var queryParams = new Dictionary<string, string> { { "identifier", identifier } };
-            if (!string.IsNullOrEmpty(format))
-            {
-                queryParams["format"] = format;
-            }
-
-            return await MakeRequestAsync<ProductDetails>("GET", "/products/details", queryParams);
+            var queryParams = new Dictionary<string, string> { { "ids", id } };
+            return await MakeRequestAsync<ProductDetails[]>("GET", "/products", queryParams);
         }
 
         /// <summary>
         /// Look up details for multiple products
         /// </summary>
-        /// <param name="identifiers">Array of product identifiers</param>
-        /// <param name="format">Response format ('json' or 'csv')</param>
+        /// <param name="ids">Array of product identifiers</param>
         /// <returns>Array of product details</returns>
+        public async Task<ApiResponse<ProductDetails[]>> GetProductsBatchAsync(string[] ids)
+        {
+            var queryParams = new Dictionary<string, string> { { "ids", string.Join(",", ids) } };
+            return await MakeRequestAsync<ProductDetails[]>("GET", "/products", queryParams);
+        }
+
+        /// <summary>
+        /// Look up product details by identifier (deprecated, use GetProductsAsync)
+        /// </summary>
+        [Obsolete("Use GetProductsAsync instead")]
+        public async Task<ApiResponse<ProductDetails>> GetProductDetailsAsync(string identifier, string? format = null)
+        {
+            var result = await GetProductsAsync(identifier);
+            return new ApiResponse<ProductDetails>
+            {
+                Success = result.Success,
+                Data = result.Data?.Length > 0 ? result.Data[0] : null!,
+                Message = result.Message,
+                Meta = result.Meta
+            };
+        }
+
+        /// <summary>
+        /// Look up details for multiple products (deprecated, use GetProductsBatchAsync)
+        /// </summary>
+        [Obsolete("Use GetProductsBatchAsync instead")]
         public async Task<ApiResponse<ProductDetails[]>> GetProductDetailsBatchAsync(string[] identifiers, string? format = null)
         {
-            var queryParams = new Dictionary<string, string> { { "identifiers", string.Join(",", identifiers) } };
-            if (!string.IsNullOrEmpty(format))
-            {
-                queryParams["format"] = format;
-            }
+            return await GetProductsBatchAsync(identifiers);
+        }
 
-            return await MakeRequestAsync<ProductDetails[]>("GET", "/products/details", queryParams);
+        /// <summary>
+        /// Search for products by query
+        /// </summary>
+        /// <param name="query">Search query</param>
+        /// <param name="limit">Maximum results (default 20, max 100)</param>
+        /// <param name="offset">Offset for pagination</param>
+        /// <returns>Product search results with pagination</returns>
+        public async Task<ProductSearchResult> SearchProductsAsync(string query, int limit = 20, int offset = 0)
+        {
+            var queryParams = new Dictionary<string, string>
+            {
+                { "q", query },
+                { "limit", limit.ToString() },
+                { "offset", offset.ToString() }
+            };
+
+            return await MakeRequestDirectAsync<ProductSearchResult>("GET", "/products/search", queryParams);
         }
 
         /// <summary>
         /// Get current offers for a product
         /// </summary>
-        /// <param name="identifier">Product identifier</param>
+        /// <param name="id">Product identifier</param>
         /// <param name="retailer">Optional retailer to filter by</param>
-        /// <param name="format">Response format ('json' or 'csv')</param>
-        /// <returns>Current offers</returns>
-        public async Task<ApiResponse<Offer[]>> GetCurrentOffersAsync(string identifier, string? retailer = null, string? format = null)
+        /// <returns>Products with their current offers</returns>
+        public async Task<ApiResponse<ProductWithOffers[]>> GetOffersAsync(string id, string? retailer = null)
         {
-            var queryParams = new Dictionary<string, string> { { "identifier", identifier } };
+            var queryParams = new Dictionary<string, string> { { "ids", id } };
             if (!string.IsNullOrEmpty(retailer))
             {
                 queryParams["retailer"] = retailer;
             }
-            if (!string.IsNullOrEmpty(format))
-            {
-                queryParams["format"] = format;
-            }
 
-            return await MakeRequestAsync<Offer[]>("GET", "/products/offers", queryParams);
+            return await MakeRequestAsync<ProductWithOffers[]>("GET", "/products/offers", queryParams);
         }
 
         /// <summary>
         /// Get current offers for multiple products
         /// </summary>
-        /// <param name="identifiers">Array of product identifiers</param>
+        /// <param name="ids">Array of product identifiers</param>
         /// <param name="retailer">Optional retailer to filter by</param>
-        /// <param name="format">Response format ('json' or 'csv')</param>
-        /// <returns>Dictionary mapping identifiers to their offers</returns>
-        public async Task<ApiResponse<Dictionary<string, Offer[]>>> GetCurrentOffersBatchAsync(string[] identifiers, string? retailer = null, string? format = null)
+        /// <returns>Products with their current offers</returns>
+        public async Task<ApiResponse<ProductWithOffers[]>> GetOffersBatchAsync(string[] ids, string? retailer = null)
         {
-            var queryParams = new Dictionary<string, string> { { "identifiers", string.Join(",", identifiers) } };
+            var queryParams = new Dictionary<string, string> { { "ids", string.Join(",", ids) } };
             if (!string.IsNullOrEmpty(retailer))
             {
                 queryParams["retailer"] = retailer;
             }
-            if (!string.IsNullOrEmpty(format))
-            {
-                queryParams["format"] = format;
-            }
 
-            return await MakeRequestAsync<Dictionary<string, Offer[]>>("GET", "/products/offers", queryParams);
+            return await MakeRequestAsync<ProductWithOffers[]>("GET", "/products/offers", queryParams);
+        }
+
+        /// <summary>
+        /// Get current offers for a product (deprecated, use GetOffersAsync)
+        /// </summary>
+        [Obsolete("Use GetOffersAsync instead")]
+        public async Task<ApiResponse<Offer[]>> GetCurrentOffersAsync(string identifier, string? retailer = null, string? format = null)
+        {
+            var result = await GetOffersAsync(identifier, retailer);
+            var offers = result.Data?.Length > 0 ? result.Data[0].Offers : Array.Empty<Offer>();
+            return new ApiResponse<Offer[]>
+            {
+                Success = result.Success,
+                Data = offers,
+                Message = result.Message,
+                Meta = result.Meta
+            };
+        }
+
+        /// <summary>
+        /// Get current offers for multiple products (deprecated, use GetOffersBatchAsync)
+        /// </summary>
+        [Obsolete("Use GetOffersBatchAsync instead")]
+        public async Task<ApiResponse<Dictionary<string, Offer[]>>> GetCurrentOffersBatchAsync(string[] identifiers, string? retailer = null, string? format = null)
+        {
+            var result = await GetOffersBatchAsync(identifiers, retailer);
+            var dict = new Dictionary<string, Offer[]>();
+            if (result.Data != null)
+            {
+                foreach (var product in result.Data)
+                {
+                    dict[product.Shopsavvy] = product.Offers;
+                }
+            }
+            return new ApiResponse<Dictionary<string, Offer[]>>
+            {
+                Success = result.Success,
+                Data = dict,
+                Message = result.Message,
+                Meta = result.Meta
+            };
         }
 
         /// <summary>
         /// Get price history for a product
         /// </summary>
-        /// <param name="identifier">Product identifier</param>
+        /// <param name="id">Product identifier</param>
         /// <param name="startDate">Start date (YYYY-MM-DD format)</param>
         /// <param name="endDate">End date (YYYY-MM-DD format)</param>
         /// <param name="retailer">Optional retailer to filter by</param>
-        /// <param name="format">Response format ('json' or 'csv')</param>
         /// <returns>Offers with price history</returns>
-        public async Task<ApiResponse<OfferWithHistory[]>> GetPriceHistoryAsync(string identifier, string startDate, string endDate, string? retailer = null, string? format = null)
+        public async Task<ApiResponse<OfferWithHistory[]>> GetPriceHistoryAsync(string id, string startDate, string endDate, string? retailer = null)
         {
             var queryParams = new Dictionary<string, string>
             {
-                { "identifier", identifier },
+                { "ids", id },
                 { "start_date", startDate },
                 { "end_date", endDate }
             };
@@ -174,12 +236,33 @@ namespace ShopSavvy.DataApi
             {
                 queryParams["retailer"] = retailer;
             }
-            if (!string.IsNullOrEmpty(format))
+
+            return await MakeRequestAsync<OfferWithHistory[]>("GET", "/products/offers/history", queryParams);
+        }
+
+        /// <summary>
+        /// Get price history for multiple products
+        /// </summary>
+        /// <param name="ids">Array of product identifiers</param>
+        /// <param name="startDate">Start date (YYYY-MM-DD format)</param>
+        /// <param name="endDate">End date (YYYY-MM-DD format)</param>
+        /// <param name="retailer">Optional retailer to filter by</param>
+        /// <returns>Offers with price history</returns>
+        public async Task<ApiResponse<OfferWithHistory[]>> GetPriceHistoryBatchAsync(string[] ids, string startDate, string endDate, string? retailer = null)
+        {
+            var queryParams = new Dictionary<string, string>
             {
-                queryParams["format"] = format;
+                { "ids", string.Join(",", ids) },
+                { "start_date", startDate },
+                { "end_date", endDate }
+            };
+
+            if (!string.IsNullOrEmpty(retailer))
+            {
+                queryParams["retailer"] = retailer;
             }
 
-            return await MakeRequestAsync<OfferWithHistory[]>("GET", "/products/history", queryParams);
+            return await MakeRequestAsync<OfferWithHistory[]>("GET", "/products/offers/history", queryParams);
         }
 
         /// <summary>
@@ -280,6 +363,49 @@ namespace ShopSavvy.DataApi
 
                 var apiResponse = JsonConvert.DeserializeObject<ApiResponse<T>>(responseContent);
                 return apiResponse ?? throw new ShopSavvyApiException("Failed to deserialize response");
+            }
+            catch (TaskCanceledException ex) when (ex.InnerException is TimeoutException)
+            {
+                throw new ShopSavvyTimeoutException($"Request timeout after {_config.Timeout.TotalSeconds} seconds");
+            }
+            catch (HttpRequestException ex)
+            {
+                throw new ShopSavvyNetworkException($"Network error: {ex.Message}", ex);
+            }
+        }
+
+        private async Task<T> MakeRequestDirectAsync<T>(string method, string endpoint, Dictionary<string, string>? queryParams = null, object? body = null)
+        {
+            var url = endpoint;
+            if (queryParams != null && queryParams.Count > 0)
+            {
+                var query = string.Join("&", queryParams.Select(kvp => $"{Uri.EscapeDataString(kvp.Key)}={Uri.EscapeDataString(kvp.Value)}"));
+                url += $"?{query}";
+            }
+
+            var request = new HttpRequestMessage(new HttpMethod(method), url);
+
+            if (body != null)
+            {
+                var json = JsonConvert.SerializeObject(body, Formatting.None, new JsonSerializerSettings
+                {
+                    NullValueHandling = NullValueHandling.Ignore
+                });
+                request.Content = new StringContent(json, Encoding.UTF8, "application/json");
+            }
+
+            try
+            {
+                var response = await _httpClient.SendAsync(request);
+                var responseContent = await response.Content.ReadAsStringAsync();
+
+                if (!response.IsSuccessStatusCode)
+                {
+                    throw CreateExceptionFromResponse(response.StatusCode, responseContent);
+                }
+
+                var result = JsonConvert.DeserializeObject<T>(responseContent);
+                return result ?? throw new ShopSavvyApiException("Failed to deserialize response");
             }
             catch (TaskCanceledException ex) when (ex.InnerException is TimeoutException)
             {
