@@ -9,7 +9,7 @@ namespace ShopSavvy.DataApi
     /// </summary>
     public static class ShopSavvySdk
     {
-        public const string Version = "1.0.1";
+        public const string Version = "1.1.0";
     }
 
     /// <summary>
@@ -208,6 +208,33 @@ namespace ShopSavvy.DataApi
         /// </summary>
         [JsonProperty("color")]
         public string? Color { get; set; }
+
+        [JsonProperty("title_short")]
+        public string? TitleShort { get; set; }
+
+        [JsonProperty("slug")]
+        public string? Slug { get; set; }
+
+        [JsonProperty("description")]
+        public string? Description { get; set; }
+
+        [JsonProperty("categories")]
+        public string[]? Categories { get; set; }
+
+        [JsonProperty("attributes")]
+        public Dictionary<string, string>? Attributes { get; set; }
+
+        [JsonProperty("rating")]
+        public Dictionary<string, object>? Rating { get; set; }
+
+        [JsonProperty("score")]
+        public Dictionary<string, object>? Score { get; set; }
+
+        [JsonProperty("keywords")]
+        public string[]? Keywords { get; set; }
+
+        [JsonProperty("identifiers")]
+        public Dictionary<string, object>? Identifiers { get; set; }
 
         // Backward-compatible aliases
 

@@ -331,6 +331,26 @@ namespace ShopSavvy.DataApi
             return await MakeRequestAsync<UsageInfo>("GET", "/usage");
         }
 
+        /// <summary>Browse current shopping deals</summary>
+        public async Task<string> GetDealsAsync(Dictionary<string, string>? parameters = null)
+        {
+            var url = "/deals";
+            if (parameters != null && parameters.Count > 0)
+            {
+                var query = string.Join("&", parameters.Select(kv => $"{Uri.EscapeDataString(kv.Key)}={Uri.EscapeDataString(kv.Value)}"));
+                url += "?" + query;
+            }
+            var response = await _httpClient.GetAsync(_baseUrl + url);
+            return await response.Content.ReadAsStringAsync();
+        }
+
+        /// <summary>Get TLDR review for a product</summary>
+        public async Task<string> GetProductReviewAsync(string identifier)
+        {
+            var response = await _httpClient.GetAsync(_baseUrl + $"/products/reviews?id={Uri.EscapeDataString(identifier)}");
+            return await response.Content.ReadAsStringAsync();
+        }
+
         private async Task<ApiResponse<T>> MakeRequestAsync<T>(string method, string endpoint, Dictionary<string, string>? queryParams = null, object? body = null)
         {
             var url = endpoint;
