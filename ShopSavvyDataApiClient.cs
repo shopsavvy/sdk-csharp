@@ -344,6 +344,24 @@ namespace ShopSavvy.DataApi
             return await response.Content.ReadAsStringAsync();
         }
 
+        /// <summary>Look up multiple products at once (sync for <=20, async for >20)</summary>
+        public async Task<string> BatchLookupAsync(string[] identifiers, string[]? include = null)
+        {
+            var body = new Dictionary<string, object> { { "identifiers", identifiers } };
+            if (include != null) body["include"] = include;
+            var json = Newtonsoft.Json.JsonConvert.SerializeObject(body);
+            var content = new StringContent(json, System.Text.Encoding.UTF8, "application/json");
+            var response = await _httpClient.PostAsync(_baseUrl + "/products/batch", content);
+            return await response.Content.ReadAsStringAsync();
+        }
+
+        /// <summary>Poll for async batch job results</summary>
+        public async Task<string> GetBatchStatusAsync(string batchId)
+        {
+            var response = await _httpClient.GetAsync(_baseUrl + $"/batch/{Uri.EscapeDataString(batchId)}");
+            return await response.Content.ReadAsStringAsync();
+        }
+
         /// <summary>Get TLDR review for a product</summary>
         public async Task<string> GetProductReviewAsync(string identifier)
         {
