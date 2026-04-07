@@ -362,6 +362,33 @@ namespace ShopSavvy.DataApi
             return await response.Content.ReadAsStringAsync();
         }
 
+        public async Task<string> CreateWebhookAsync(string url, string[] events)
+        {
+            var body = new { url, events };
+            var json = Newtonsoft.Json.JsonConvert.SerializeObject(body);
+            var content = new StringContent(json, System.Text.Encoding.UTF8, "application/json");
+            var response = await _httpClient.PostAsync(_baseUrl + "/webhooks", content);
+            return await response.Content.ReadAsStringAsync();
+        }
+
+        public async Task<string> ListWebhooksAsync()
+        {
+            var response = await _httpClient.GetAsync(_baseUrl + "/webhooks");
+            return await response.Content.ReadAsStringAsync();
+        }
+
+        public async Task<string> TestWebhookAsync(string webhookId)
+        {
+            var response = await _httpClient.PostAsync(_baseUrl + $"/webhooks/{Uri.EscapeDataString(webhookId)}/test", null);
+            return await response.Content.ReadAsStringAsync();
+        }
+
+        public async Task<string> DeleteWebhookAsync(string webhookId)
+        {
+            var response = await _httpClient.DeleteAsync(_baseUrl + $"/webhooks/{Uri.EscapeDataString(webhookId)}");
+            return await response.Content.ReadAsStringAsync();
+        }
+
         /// <summary>Get TLDR review for a product</summary>
         public async Task<string> GetProductReviewAsync(string identifier)
         {
