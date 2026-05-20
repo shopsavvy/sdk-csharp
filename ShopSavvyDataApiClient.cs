@@ -383,6 +383,28 @@ namespace ShopSavvy.DataApi
             return await response.Content.ReadAsStringAsync();
         }
 
+        /// <summary>
+        /// Update a webhook. All parameters are optional, but at least one of
+        /// <paramref name="url"/>, <paramref name="events"/>, or
+        /// <paramref name="isActive"/> must be non-null.
+        /// </summary>
+        public async Task<string> UpdateWebhookAsync(string webhookId, string? url = null, string[]? events = null, bool? isActive = null)
+        {
+            if (url == null && events == null && !isActive.HasValue)
+            {
+                throw new ArgumentException("UpdateWebhookAsync requires at least one of url, events, or isActive");
+            }
+            var body = new System.Collections.Generic.Dictionary<string, object>();
+            if (url != null) body["url"] = url;
+            if (events != null) body["events"] = events;
+            if (isActive.HasValue) body["is_active"] = isActive.Value;
+            var json = Newtonsoft.Json.JsonConvert.SerializeObject(body);
+            var content = new StringContent(json, System.Text.Encoding.UTF8, "application/json");
+            var request = new HttpRequestMessage(HttpMethod.Put, _baseUrl + $"/webhooks/{Uri.EscapeDataString(webhookId)}") { Content = content };
+            var response = await _httpClient.SendAsync(request);
+            return await response.Content.ReadAsStringAsync();
+        }
+
         public async Task<string> DeleteWebhookAsync(string webhookId)
         {
             var response = await _httpClient.DeleteAsync(_baseUrl + $"/webhooks/{Uri.EscapeDataString(webhookId)}");
