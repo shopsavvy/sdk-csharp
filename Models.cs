@@ -227,6 +227,12 @@ namespace ShopSavvy.DataApi
         [JsonProperty("rating")]
         public Dictionary<string, object>? Rating { get; set; }
 
+        /// <summary>
+        /// Expert quality scores on a 0-1 scale (multiply by 10 or 100 for
+        /// display): "overall", "customer", "professional", plus an "aspects"
+        /// map keyed by free-form aspect names from the product's
+        /// professional reviews.
+        /// </summary>
         [JsonProperty("score")]
         public Dictionary<string, object>? Score { get; set; }
 
