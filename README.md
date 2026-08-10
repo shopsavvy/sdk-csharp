@@ -221,9 +221,9 @@ var history = await client.GetPriceHistoryAsync(
 Console.WriteLine("📈 90-Day Price Analysis");
 Console.WriteLine(new string('=', 50));
 
-foreach (var offer in history.Data.Where(o => o.PriceHistory?.Any() == true))
+foreach (var offer in history.Data.Where(o => o.History?.Any() == true))
 {
-    var prices = offer.PriceHistory.Select(ph => ph.Price).ToArray();
+    var prices = offer.History.Select(ph => ph.Price).ToArray();
     var currentPrice = offer.Price;
     
     // Statistical analysis
@@ -256,7 +256,7 @@ foreach (var offer in history.Data.Where(o => o.PriceHistory?.Any() == true))
     Console.WriteLine($"  Range: ${minPrice:F2} - ${maxPrice:F2}");
     Console.WriteLine($"  Savings opportunity: ${currentPrice - minPrice:F2}");
     Console.WriteLine($"  Trend: {trend}");
-    Console.WriteLine($"  Data points: {offer.PriceHistory.Length}");
+    Console.WriteLine($"  Data points: {offer.History.Length}");
     Console.WriteLine();
 }
 ```
@@ -279,9 +279,9 @@ foreach (var retailer in retailers)
     if (!history.Data.Any()) continue;
     
     var offer = history.Data.First();
-    if (offer.PriceHistory?.Any() == true)
+    if (offer.History?.Any() == true)
     {
-        var prices = offer.PriceHistory.Select(ph => ph.Price).ToArray();
+        var prices = offer.History.Select(ph => ph.Price).ToArray();
         historicalComparison[retailer] = new
         {
             Current = offer.Price,

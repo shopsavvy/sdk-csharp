@@ -309,15 +309,22 @@ namespace ShopSavvy.DataApi
     }
 
     /// <summary>
-    /// Single price point in history
+    /// Single price point in history.
+    ///
+    /// The timestamp property binds to <c>timestamp</c>, matching the parent Offer's own
+    /// <c>timestamp</c> and the real wire shape (<c>{availability, price, timestamp}</c>).
+    /// Every SDK in the fleet bound it to a <c>date</c> key — one the API has never sent —
+    /// until 2026-08-10, and Json.NET leaves an unmatched property at its default, so this
+    /// value read as <c>string.Empty</c> for every consumer
+    /// (ShopSavvy prospector-audit s28-t2-2).
     /// </summary>
     public class PriceHistoryEntry
     {
         /// <summary>
-        /// Date of price point
+        /// ISO-8601 timestamp of the observation
         /// </summary>
-        [JsonProperty("date")]
-        public string Date { get; set; } = string.Empty;
+        [JsonProperty("timestamp")]
+        public string Timestamp { get; set; } = string.Empty;
 
         /// <summary>
         /// Price at this date
@@ -451,10 +458,14 @@ namespace ShopSavvy.DataApi
         public string? Timestamp { get; set; }
 
         /// <summary>
-        /// Historical price data
+        /// Historical price data.
+        ///
+        /// Binds to <c>history</c>. It used to bind to <c>price_history</c>, a key the API
+        /// has never sent, so this array silently stayed at its empty default on every
+        /// successful response (ShopSavvy prospector-audit s28-t2-2).
         /// </summary>
-        [JsonProperty("price_history")]
-        public PriceHistoryEntry[] PriceHistory { get; set; } = Array.Empty<PriceHistoryEntry>();
+        [JsonProperty("history")]
+        public PriceHistoryEntry[] History { get; set; } = Array.Empty<PriceHistoryEntry>();
     }
 
     /// <summary>
