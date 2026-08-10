@@ -333,6 +333,13 @@ namespace ShopSavvy.DataApi
         public decimal Price { get; set; }
 
         /// <summary>
+        /// ISO 4217 code the Price is denominated in. Null on an archived point with no recorded
+        /// currency - never assume a missing value means USD (ShopSavvy prospector-audit d5-t3-1).
+        /// </summary>
+        [JsonProperty("currency")]
+        public string? Currency { get; set; }
+
+        /// <summary>
         /// Availability at this date
         /// </summary>
         [JsonProperty("availability")]
