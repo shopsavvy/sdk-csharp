@@ -18,9 +18,9 @@ using ShopSavvy.DataApi;
 
 var client = new ShopSavvyDataApiClient("ss_live_your_api_key_here");
 var product = await client.GetProductDetailsAsync("012345678901");
-var offers = await client.GetCurrentOffersAsync("012345678901");
-var bestPrice = offers.Data.MinBy(o => o.Price);
-Console.WriteLine($"{product.Data.Name} - Best price: ${bestPrice.Price:F2} at {bestPrice.Retailer}");
+var offers = await client.GetOffersAsync("012345678901");   // one entry per product, each with Offers
+var bestPrice = offers.Data[0].Offers.Where(o => o.Price.HasValue).MinBy(o => o.Price);
+Console.WriteLine($"{product.Data.Title} - Best price: ${bestPrice.Price:F2} at {bestPrice.Retailer}");
 ```
 
 ## 🚀 Installation & Setup
@@ -136,22 +136,26 @@ for (int i = 0; i < products.Data.Length; i++)
 
 #### All Retailers Analysis
 ```csharp
-var offers = await client.GetCurrentOffersAsync("012345678901");
-Console.WriteLine($"Found {offers.Data.Length} offers across retailers");
+// GetOffersAsync returns one entry per matched product: every product field plus its Offers
+var response = await client.GetOffersAsync("012345678901");
+var product = response.Data[0];
+var offers = product.Offers.Where(o => o.Price.HasValue).ToArray();
+Console.WriteLine($"{product.Title}: {offers.Length} offers across retailers");
 
 // Advanced price analysis
-var sortedOffers = offers.Data.OrderBy(o => o.Price).ToArray();
+var sortedOffers = offers.OrderBy(o => o.Price).ToArray();
 var cheapest = sortedOffers.First();
 var mostExpensive = sortedOffers.Last();
 
 Console.WriteLine($"💰 Best price: {cheapest.Retailer} - ${cheapest.Price:F2}");
 Console.WriteLine($"💸 Highest price: {mostExpensive.Retailer} - ${mostExpensive.Price:F2}");
-Console.WriteLine($"📊 Average price: ${offers.Data.Average(o => o.Price):F2}");
+Console.WriteLine($"📊 Average price: ${offers.Average(o => o.Price):F2}");
 Console.WriteLine($"💡 Potential savings: ${mostExpensive.Price - cheapest.Price:F2}");
 
-// Filter by availability and condition
-var inStockOffers = offers.Data.Where(o => o.Availability == "in").ToArray();
-var newConditionOffers = offers.Data.Where(o => o.Condition == "new").ToArray();
+// Filter by availability ("in", "out", "limited", "pre-order", "coming-soon", "discontinued";
+// null when unknown) and condition
+var inStockOffers = offers.Where(o => o.Availability == "in").ToArray();
+var newConditionOffers = offers.Where(o => o.Condition == "new").ToArray();
 
 Console.WriteLine($"✅ In-stock offers: {inStockOffers.Length}");
 Console.WriteLine($"🆕 New condition: {newConditionOffers.Length}");
@@ -159,17 +163,17 @@ Console.WriteLine($"🆕 New condition: {newConditionOffers.Length}");
 
 #### Retailer-Specific Queries
 ```csharp
-// Major retailers
-var retailers = new[] { "amazon", "walmart", "target", "bestbuy" };
+// Major retailers (retailer = domain name)
+var retailers = new[] { "amazon.com", "walmart.com", "target.com", "bestbuy.com" };
 var retailerPrices = new Dictionary<string, decimal>();
 
 foreach (var retailer in retailers)
 {
-    var offers = await client.GetCurrentOffersAsync("012345678901", retailer);
-    if (offers.Data.Any())
+    var response = await client.GetOffersAsync("012345678901", retailer);
+    var offers = response.Data.SelectMany(p => p.Offers).Where(o => o.Price.HasValue).ToArray();
+    if (offers.Any())
     {
-        var bestOffer = offers.Data.MinBy(o => o.Price);
-        retailerPrices[retailer] = bestOffer.Price;
+        retailerPrices[retailer] = offers.Min(o => o.Price!.Value);
     }
 }
 
@@ -189,14 +193,16 @@ var productList = new[]
     "B07XJ8C8F5", "B09G9FPHY6"
 };
 
-var batchOffers = await client.GetCurrentOffersBatchAsync(productList);
+var batchOffers = await client.GetOffersBatchAsync(productList);
 
-foreach (var (identifier, offers) in batchOffers.Data)
+// One entry per identifier that matched a product (unknown identifiers are omitted)
+foreach (var product in batchOffers.Data)
 {
+    var offers = product.Offers.Where(o => o.Price.HasValue).ToArray();
     if (!offers.Any()) continue;
     
     var bestOffer = offers.MinBy(o => o.Price);
-    Console.WriteLine($"{identifier}:");
+    Console.WriteLine($"{product.Title} ({product.Barcode}):");
     Console.WriteLine($"  Best price: {bestOffer.Retailer} - ${bestOffer.Price:F2}");
     Console.WriteLine($"  Total offers: {offers.Length}");
     Console.WriteLine($"  In stock: {offers.Count(o => o.Availability == "in")}");
@@ -381,12 +387,12 @@ public class PriceController : ControllerBase
     {
         try
         {
-            var offers = await _client.GetCurrentOffersAsync(identifier);
+            var response = await _client.GetOffersAsync(identifier);
             return Ok(new
             {
                 success = true,
                 productId = identifier,
-                offers = offers.Data.Select(o => new
+                offers = response.Data.SelectMany(p => p.Offers).Select(o => new
                 {
                     retailer = o.Retailer,
                     price = o.Price,
@@ -394,8 +400,8 @@ public class PriceController : ControllerBase
                     condition = o.Condition,
                     url = o.Url
                 }),
-                bestPrice = offers.Data.MinBy(o => o.Price)?.Price,
-                creditsRemaining = offers.CreditsRemaining
+                bestPrice = response.Data.SelectMany(p => p.Offers).Min(o => o.Price),
+                creditsRemaining = response.CreditsRemaining()
             });
         }
         catch (ShopSavvyApiException ex)
@@ -447,8 +453,8 @@ public class PriceMonitoringService : BackgroundService
         {
             try
             {
-                var offers = await _client.GetCurrentOffersAsync(productId);
-                var bestPrice = offers.Data.MinBy(o => o.Price)?.Price;
+                var response = await _client.GetOffersAsync(productId);
+                var bestPrice = response.Data.SelectMany(p => p.Offers).Min(o => o.Price);
                 
                 // Store in database or send alerts
                 _logger.LogInformation($"Product {productId}: Best price ${bestPrice:F2}");
@@ -504,8 +510,8 @@ try
     Console.WriteLine($"✅ Product lookup: {product.Data.Name}");
     
     // Test current offers
-    var offers = await client.GetCurrentOffersAsync("012345678901");
-    Console.WriteLine($"✅ Current offers: {offers.Data.Length} found");
+    var offers = await client.GetOffersAsync("012345678901");
+    Console.WriteLine($"✅ Current offers: {offers.Data.Sum(p => p.Offers.Length)} found");
     
     // Test usage info
     var usage = await client.GetUsageAsync();
