@@ -1,0 +1,38 @@
+{
+  "success": true,
+  "data": [
+    {
+      "title": "Nintendo Switch Pro Controller",
+      "category": "Video Games",
+      "brand": "Nintendo",
+      "color": "Black",
+      "shopsavvy": "products/1bdc8c1ce5d3b56abb4b2cb0adf1b0b1",
+      "barcode": "045496590444",
+      "amazon": "B01NAWKYZ0",
+      "model": "HACAFSSKA",
+      "mpn": null,
+      "images": ["https://images.shopsavvy.com/pro-controller.jpg"],
+      "title_short": "Switch Pro Controller",
+      "slug": "nintendo-switch-pro-controller",
+      "identifiers": { "amazon": "B01NAWKYZ0", "upc": "045496590444" },
+      "schedule": "daily",
+      "retailer": "bestbuy.com"
+    },
+    {
+      "title": "Apple AirPods Pro (2nd generation)",
+      "category": "Headphones",
+      "brand": "Apple",
+      "shopsavvy": "products/9a1f2c3d4e5f60718293a4b5c6d7e8f9",
+      "barcode": "194253397168",
+      "images": [],
+      "schedule": "daily",
+      "retailer": "bestbuy.com"
+    }
+  ],
+  "meta": {
+    "request_id": "req_sched_01",
+    "credits_used": 2,
+    "credits_remaining": 998,
+    "rate_limit_remaining": 59
+  }
+}

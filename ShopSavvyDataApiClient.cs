@@ -302,10 +302,10 @@ namespace ShopSavvy.DataApi
         /// <param name="identifier">Product identifier</param>
         /// <param name="frequency">How often to refresh ('hourly', 'daily', 'weekly')</param>
         /// <param name="retailer">Optional retailer domain to monitor (e.g. "amazon.com")</param>
-        /// <returns>Scheduling confirmation</returns>
-        public async Task<ApiResponse<ScheduleResponse>> ScheduleProductMonitoringAsync(string identifier, string frequency, string? retailer = null)
+        /// <returns>The scheduled product (an array: the API always returns <c>data</c> as a list), with its schedule and retailer</returns>
+        public async Task<ApiResponse<ScheduledProduct[]>> ScheduleProductMonitoringAsync(string identifier, string frequency, string? retailer = null)
         {
-            return await MakeRequestAsync<ScheduleResponse>("PUT", "/products/scheduled", ScheduleQueryParams(new[] { identifier }, frequency, retailer));
+            return await MakeRequestAsync<ScheduledProduct[]>("PUT", "/products/scheduled", ScheduleQueryParams(new[] { identifier }, frequency, retailer));
         }
 
         /// <summary>
@@ -314,16 +314,16 @@ namespace ShopSavvy.DataApi
         /// <param name="identifiers">Array of product identifiers</param>
         /// <param name="frequency">How often to refresh</param>
         /// <param name="retailer">Optional retailer domain to monitor (e.g. "amazon.com")</param>
-        /// <returns>Scheduling confirmation for all products</returns>
-        public async Task<ApiResponse<ScheduleBatchResponse[]>> ScheduleProductMonitoringBatchAsync(string[] identifiers, string frequency, string? retailer = null)
+        /// <returns>One entry per identifier that resolved to a product (unknown identifiers are omitted, and not charged)</returns>
+        public async Task<ApiResponse<ScheduledProduct[]>> ScheduleProductMonitoringBatchAsync(string[] identifiers, string frequency, string? retailer = null)
         {
-            return await MakeRequestAsync<ScheduleBatchResponse[]>("PUT", "/products/scheduled", ScheduleQueryParams(identifiers, frequency, retailer));
+            return await MakeRequestAsync<ScheduledProduct[]>("PUT", "/products/scheduled", ScheduleQueryParams(identifiers, frequency, retailer));
         }
 
         /// <summary>
         /// Get all scheduled products
         /// </summary>
-        /// <returns>List of scheduled products</returns>
+        /// <returns>List of scheduled products, each with its schedule and retailer</returns>
         public async Task<ApiResponse<ScheduledProduct[]>> GetScheduledProductsAsync()
         {
             return await MakeRequestAsync<ScheduledProduct[]>("GET", "/products/scheduled");
@@ -333,22 +333,22 @@ namespace ShopSavvy.DataApi
         /// Remove product from monitoring schedule
         /// </summary>
         /// <param name="identifier">Product identifier to remove</param>
-        /// <returns>Removal confirmation</returns>
-        public async Task<ApiResponse<RemoveResponse>> RemoveProductFromScheduleAsync(string identifier)
+        /// <returns>Confirmation (<c>success</c>, <c>message</c>, <c>meta</c>; the API returns no <c>data</c>)</returns>
+        public async Task<UnscheduleResponse> RemoveProductFromScheduleAsync(string identifier)
         {
             var queryParams = new Dictionary<string, string> { { "ids", identifier } };
-            return await MakeRequestAsync<RemoveResponse>("DELETE", "/products/scheduled", queryParams);
+            return await MakeRequestDirectAsync<UnscheduleResponse>("DELETE", "/products/scheduled", queryParams);
         }
 
         /// <summary>
         /// Remove multiple products from monitoring schedule
         /// </summary>
         /// <param name="identifiers">Array of product identifiers to remove</param>
-        /// <returns>Removal confirmation for all products</returns>
-        public async Task<ApiResponse<RemoveBatchResponse[]>> RemoveProductsFromScheduleAsync(string[] identifiers)
+        /// <returns>Confirmation (<c>success</c>, <c>message</c>, <c>meta</c>; the API returns no per-product results)</returns>
+        public async Task<UnscheduleResponse> RemoveProductsFromScheduleAsync(string[] identifiers)
         {
             var queryParams = new Dictionary<string, string> { { "ids", string.Join(",", identifiers) } };
-            return await MakeRequestAsync<RemoveBatchResponse[]>("DELETE", "/products/scheduled", queryParams);
+            return await MakeRequestDirectAsync<UnscheduleResponse>("DELETE", "/products/scheduled", queryParams);
         }
 
         /// <summary>

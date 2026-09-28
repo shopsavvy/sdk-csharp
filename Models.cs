@@ -578,116 +578,60 @@ namespace ShopSavvy.DataApi
     }
 
     /// <summary>
-    /// Scheduled product monitoring information
+    /// One product on the refresh schedule: every product field the products endpoint returns,
+    /// plus the refresh <see cref="Schedule"/> and the optional <see cref="Retailer"/> filter.
+    ///
+    /// This is the element type of <c>data</c> for BOTH <c>PUT /products/scheduled</c>
+    /// (<see cref="ShopSavvyDataApiClient.ScheduleProductMonitoringAsync"/>, which echoes back the
+    /// products it scheduled) and <c>GET /products/scheduled</c>
+    /// (<see cref="ShopSavvyDataApiClient.GetScheduledProductsAsync"/>). Until 1.4.0 the SDK
+    /// modelled these as <c>{scheduled, product_id}</c> and <c>{product_id, identifier,
+    /// frequency, created_at, last_refreshed}</c> — keys the API has never sent — so every
+    /// field read at its default on a successful response.
     /// </summary>
-    public class ScheduledProduct
+    public class ScheduledProduct : ProductDetails
     {
         /// <summary>
-        /// Product identifier
+        /// Refresh schedule: <c>"hourly"</c>, <c>"daily"</c> or <c>"weekly"</c>. Always present on
+        /// a schedule response. On the list it is null when the product's refresh interval has no
+        /// Data API label (e.g. a 4h/12h interval set from ShopSavvy Business) — the API omits it.
         /// </summary>
-        [JsonProperty("product_id")]
-        public string ProductId { get; set; } = string.Empty;
+        [JsonProperty("schedule")]
+        public string? Schedule { get; set; }
 
         /// <summary>
-        /// Original identifier used for scheduling
-        /// </summary>
-        [JsonProperty("identifier")]
-        public string Identifier { get; set; } = string.Empty;
-
-        /// <summary>
-        /// Monitoring frequency
-        /// </summary>
-        [JsonProperty("frequency")]
-        public string Frequency { get; set; } = string.Empty;
-
-        /// <summary>
-        /// Optional retailer filter
+        /// Retailer domain the schedule is restricted to (e.g. <c>"amazon.com"</c>). Null when the
+        /// product is scheduled across all retailers — the API omits the key.
         /// </summary>
         [JsonProperty("retailer")]
         public string? Retailer { get; set; }
-
-        /// <summary>
-        /// When monitoring was created
-        /// </summary>
-        [JsonProperty("created_at")]
-        public string CreatedAt { get; set; } = string.Empty;
-
-        /// <summary>
-        /// Last refresh timestamp
-        /// </summary>
-        [JsonProperty("last_refreshed")]
-        public string? LastRefreshed { get; set; }
     }
 
     /// <summary>
-    /// Response from scheduling a product
+    /// Response from <c>DELETE /products/scheduled</c>.
+    ///
+    /// The API returns <c>{success, message, meta}</c> with NO <c>data</c> key; it does not report
+    /// per-product results. Until 1.4.0 the SDK typed this as <c>data: {removed}</c> /
+    /// <c>data: [{identifier, removed}]</c>, which always read <c>false</c>/empty.
     /// </summary>
-    public class ScheduleResponse
+    public class UnscheduleResponse
     {
         /// <summary>
-        /// Whether scheduling was successful
+        /// Whether the request succeeded
         /// </summary>
-        [JsonProperty("scheduled")]
-        public bool Scheduled { get; set; }
+        [JsonProperty("success")]
+        public bool Success { get; set; }
 
         /// <summary>
-        /// Product identifier
+        /// Confirmation message, e.g. "Products successfully removed from schedule"
         /// </summary>
-        [JsonProperty("product_id")]
-        public string ProductId { get; set; } = string.Empty;
-    }
-
-    /// <summary>
-    /// Response from batch scheduling
-    /// </summary>
-    public class ScheduleBatchResponse
-    {
-        /// <summary>
-        /// Original identifier
-        /// </summary>
-        [JsonProperty("identifier")]
-        public string Identifier { get; set; } = string.Empty;
+        [JsonProperty("message")]
+        public string? Message { get; set; }
 
         /// <summary>
-        /// Whether scheduling was successful
+        /// Response metadata (unscheduling is free: credits_used is 0)
         /// </summary>
-        [JsonProperty("scheduled")]
-        public bool Scheduled { get; set; }
-
-        /// <summary>
-        /// Product identifier
-        /// </summary>
-        [JsonProperty("product_id")]
-        public string ProductId { get; set; } = string.Empty;
-    }
-
-    /// <summary>
-    /// Response from removing a product from schedule
-    /// </summary>
-    public class RemoveResponse
-    {
-        /// <summary>
-        /// Whether removal was successful
-        /// </summary>
-        [JsonProperty("removed")]
-        public bool Removed { get; set; }
-    }
-
-    /// <summary>
-    /// Response from batch removal
-    /// </summary>
-    public class RemoveBatchResponse
-    {
-        /// <summary>
-        /// Original identifier
-        /// </summary>
-        [JsonProperty("identifier")]
-        public string Identifier { get; set; } = string.Empty;
-
-        /// <summary>
-        /// Whether removal was successful
-        /// </summary>
-        [JsonProperty("removed")]
-        public bool Removed { get; set; }
+        [JsonProperty("meta")]
+        public ApiMeta? Meta { get; set; }
     }
 }
