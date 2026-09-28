@@ -245,8 +245,11 @@ namespace ShopSavvy.DataApi
         /// <param name="startDate">Start date (YYYY-MM-DD format)</param>
         /// <param name="endDate">End date (YYYY-MM-DD format)</param>
         /// <param name="retailer">Optional retailer to filter by</param>
-        /// <returns>Offers with price history</returns>
-        public async Task<ApiResponse<OfferWithHistory[]>> GetPriceHistoryAsync(string id, string startDate, string endDate, string? retailer = null)
+        /// <returns>
+        /// One entry per matched product (product fields plus <c>Offers</c>), where each offer
+        /// carries its own <c>History</c> of price points, newest first
+        /// </returns>
+        public async Task<ApiResponse<ProductWithPriceHistory[]>> GetPriceHistoryAsync(string id, string startDate, string endDate, string? retailer = null)
         {
             var queryParams = new Dictionary<string, string>
             {
@@ -264,7 +267,7 @@ namespace ShopSavvy.DataApi
                 queryParams["retailer"] = retailer;
             }
 
-            return await MakeRequestAsync<OfferWithHistory[]>("GET", "/products/offers/history", queryParams);
+            return await MakeRequestAsync<ProductWithPriceHistory[]>("GET", "/products/offers/history", queryParams);
         }
 
         /// <summary>
@@ -274,8 +277,8 @@ namespace ShopSavvy.DataApi
         /// <param name="startDate">Start date (YYYY-MM-DD format)</param>
         /// <param name="endDate">End date (YYYY-MM-DD format)</param>
         /// <param name="retailer">Optional retailer to filter by</param>
-        /// <returns>Offers with price history</returns>
-        public async Task<ApiResponse<OfferWithHistory[]>> GetPriceHistoryBatchAsync(string[] ids, string startDate, string endDate, string? retailer = null)
+        /// <returns>One entry per matched product, each with its offers and their price history</returns>
+        public async Task<ApiResponse<ProductWithPriceHistory[]>> GetPriceHistoryBatchAsync(string[] ids, string startDate, string endDate, string? retailer = null)
         {
             var queryParams = new Dictionary<string, string>
             {
@@ -290,7 +293,7 @@ namespace ShopSavvy.DataApi
                 queryParams["retailer"] = retailer;
             }
 
-            return await MakeRequestAsync<OfferWithHistory[]>("GET", "/products/offers/history", queryParams);
+            return await MakeRequestAsync<ProductWithPriceHistory[]>("GET", "/products/offers/history", queryParams);
         }
 
         /// <summary>

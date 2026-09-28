@@ -39,6 +39,12 @@ namespace ShopSavvy.DataApi
     public class ApiMeta
     {
         /// <summary>
+        /// Server-side request identifier — quote it when contacting support
+        /// </summary>
+        [JsonProperty("request_id")]
+        public string? RequestId { get; set; }
+
+        /// <summary>
         /// Credits used for this request
         /// </summary>
         [JsonProperty("credits_used")]
@@ -340,10 +346,12 @@ namespace ShopSavvy.DataApi
         public string? Currency { get; set; }
 
         /// <summary>
-        /// Availability at this date
+        /// Availability at this observation (<c>"in"</c> or <c>"out"</c>). Null when the
+        /// availability at that point was not confirmed — the API omits the key rather than
+        /// sending a guess.
         /// </summary>
         [JsonProperty("availability")]
-        public string Availability { get; set; } = string.Empty;
+        public string? Availability { get; set; }
     }
 
     /// <summary>
@@ -433,7 +441,8 @@ namespace ShopSavvy.DataApi
     }
 
     /// <summary>
-    /// Offer with historical price data
+    /// Offer with historical price data: every field of <see cref="Offer"/> (the offer's
+    /// CURRENT state at that retailer) plus its <see cref="History"/> of price points.
     /// </summary>
     public class OfferWithHistory
     {
@@ -473,6 +482,25 @@ namespace ShopSavvy.DataApi
         /// </summary>
         [JsonProperty("history")]
         public PriceHistoryEntry[] History { get; set; } = Array.Empty<PriceHistoryEntry>();
+    }
+
+    /// <summary>
+    /// One product in a price-history response, as returned by
+    /// <c>GetPriceHistoryAsync</c> / <c>GetPriceHistoryBatchAsync</c>.
+    ///
+    /// <c>GET /products/offers/history</c> returns one entry PER PRODUCT — the same product
+    /// fields as the products endpoint — with an <c>offers</c> array, and each offer carries
+    /// its own <c>history</c>. Until 1.4.0 the SDK typed <c>data</c> as a flat array of
+    /// <see cref="OfferWithHistory"/>, so Json.NET bound product objects onto offer fields:
+    /// every <c>Id</c>, <c>Price</c> and <c>History</c> read empty on a successful response.
+    /// </summary>
+    public class ProductWithPriceHistory : ProductDetails
+    {
+        /// <summary>
+        /// Offers for this product at each retailer, each with its price history
+        /// </summary>
+        [JsonProperty("offers")]
+        public OfferWithHistory[] Offers { get; set; } = Array.Empty<OfferWithHistory>();
     }
 
     /// <summary>
