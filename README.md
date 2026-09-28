@@ -40,7 +40,7 @@ dotnet add package ShopSavvy.Sdk
 ### PackageReference
 
 ```xml
-<PackageReference Include="ShopSavvy.Sdk" Version="1.0.0" />
+<PackageReference Include="ShopSavvy.Sdk" Version="1.4.0" />
 ```
 
 ### Get Your API Key
@@ -207,6 +207,13 @@ foreach (var (identifier, offers) in batchOffers.Data)
 ### Historical Price Analysis
 
 #### Comprehensive Price Trends
+
+`GetPriceHistoryAsync` returns `ApiResponse<ProductWithPriceHistory[]>`: one entry per matched
+product (every `ProductDetails` field, plus `Offers`). Each `OfferWithHistory` carries the offer's
+current state at that retailer and a `History` array of `PriceHistoryEntry` points
+(`Timestamp`, `Price`, `Currency`, `Availability`), **newest first**. `Currency` can be null and
+`Availability` is null when it was not confirmed at that point. The window may span at most 366 days.
+
 ```csharp
 // Get 90 days of price history for detailed analysis
 var endDate = DateTime.Today;
@@ -218,53 +225,50 @@ var history = await client.GetPriceHistoryAsync(
     endDate.ToString("yyyy-MM-dd")
 );
 
-Console.WriteLine("📈 90-Day Price Analysis");
-Console.WriteLine(new string('=', 50));
-
-foreach (var offer in history.Data.Where(o => o.History?.Any() == true))
+foreach (var product in history.Data)
 {
-    var prices = offer.History.Select(ph => ph.Price).ToArray();
-    var currentPrice = offer.Price;
-    
-    // Statistical analysis
-    var avgPrice = prices.Average();
-    var minPrice = prices.Min();
-    var maxPrice = prices.Max();
-    
-    // Price trend calculation
-    var recentPrices = prices.TakeLast(7).ToArray();  // Last week
-    var olderPrices = prices.Take(Math.Max(prices.Length - 7, 1)).ToArray();
-    
-    var trend = "📊 Insufficient data";
-    if (recentPrices.Any() && olderPrices.Any())
+    Console.WriteLine($"📈 90-Day Price Analysis: {product.Title}");
+    Console.WriteLine(new string('=', 50));
+
+    foreach (var offer in product.Offers.Where(o => o.History.Length > 0))
     {
-        var recentAvg = recentPrices.Average();
-        var olderAvg = olderPrices.Average();
-        var changePct = Math.Round((recentAvg - olderAvg) / olderAvg * 100, 1);
-        
-        trend = changePct switch
+        var prices = offer.History.Select(point => point.Price).ToArray();
+        var currentPrice = offer.Price ?? prices[0];
+
+        // Points are newest first: the first 7 are the most recent ones
+        var recentPrices = prices.Take(7).ToArray();
+        var olderPrices = prices.Skip(7).ToArray();
+
+        var trend = "📊 Insufficient data";
+        if (recentPrices.Any() && olderPrices.Any())
         {
-            > 5 => $"📈 Rising (+{changePct}%)",
-            < -5 => $"📉 Falling ({changePct}%)",
-            _ => $"📊 Stable ({changePct:+0.0;-0.0;0.0}%)"
-        };
+            var recentAvg = recentPrices.Average();
+            var olderAvg = olderPrices.Average();
+            var changePct = Math.Round((recentAvg - olderAvg) / olderAvg * 100, 1);
+
+            trend = changePct switch
+            {
+                > 5 => $"📈 Rising (+{changePct}%)",
+                < -5 => $"📉 Falling ({changePct}%)",
+                _ => $"📊 Stable ({changePct:+0.0;-0.0;0.0}%)"
+            };
+        }
+
+        Console.WriteLine($"🏪 {offer.Retailer}");
+        Console.WriteLine($"  Current: {currentPrice:F2} {offer.Currency}");
+        Console.WriteLine($"  Average: {prices.Average():F2}");
+        Console.WriteLine($"  Range: {prices.Min():F2} - {prices.Max():F2}");
+        Console.WriteLine($"  Trend: {trend}");
+        Console.WriteLine($"  Data points: {offer.History.Length} (latest {offer.History[0].Timestamp})");
+        Console.WriteLine();
     }
-    
-    Console.WriteLine($"🏪 {offer.Retailer.ToUpper()}");
-    Console.WriteLine($"  Current: ${currentPrice:F2}");
-    Console.WriteLine($"  Average: ${avgPrice:F2}");
-    Console.WriteLine($"  Range: ${minPrice:F2} - ${maxPrice:F2}");
-    Console.WriteLine($"  Savings opportunity: ${currentPrice - minPrice:F2}");
-    Console.WriteLine($"  Trend: {trend}");
-    Console.WriteLine($"  Data points: {offer.History.Length}");
-    Console.WriteLine();
 }
 ```
 
 #### Retailer-Specific Historical Analysis
 ```csharp
-// Compare price history across major retailers
-var retailers = new[] { "amazon", "walmart", "target", "bestbuy" };
+// Compare price history across major retailers (retailer = domain name)
+var retailers = new[] { "amazon.com", "walmart.com", "target.com", "bestbuy.com" };
 var historicalComparison = new Dictionary<string, dynamic>();
 
 foreach (var retailer in retailers)
@@ -275,22 +279,20 @@ foreach (var retailer in retailers)
         "2024-12-31",
         retailer
     );
-    
-    if (!history.Data.Any()) continue;
-    
-    var offer = history.Data.First();
-    if (offer.History?.Any() == true)
+
+    var product = history.Data.FirstOrDefault();
+    var offer = product?.Offers.FirstOrDefault(o => o.History.Length > 0);
+    if (offer == null) continue;
+
+    var prices = offer.History.Select(point => point.Price).ToArray();
+    historicalComparison[retailer] = new
     {
-        var prices = offer.History.Select(ph => ph.Price).ToArray();
-        historicalComparison[retailer] = new
-        {
-            Current = offer.Price,
-            Average = prices.Average(),
-            Lowest = prices.Min(),
-            Highest = prices.Max(),
-            Volatility = prices.Max() - prices.Min()
-        };
-    }
+        Current = offer.Price ?? prices[0],
+        Average = prices.Average(),
+        Lowest = prices.Min(),
+        Highest = prices.Max(),
+        Volatility = prices.Max() - prices.Min()
+    };
 }
 
 Console.WriteLine("Retailer Historical Comparison:");
@@ -449,7 +451,7 @@ dotnet restore
 dotnet build
 
 # Run tests
-dotnet test
+dotnet test tests/ShopSavvy.DataApi.Tests
 
 # Create NuGet package
 dotnet pack
