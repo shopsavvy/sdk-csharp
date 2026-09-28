@@ -1,0 +1,75 @@
+{
+  "success": true,
+  "data": [
+    {
+      "title": "Keurig K-Mini Single Serve Coffee Maker, Black",
+      "category": "Coffee Makers",
+      "brand": "Keurig",
+      "color": "Black",
+      "shopsavvy": "products/3ONn300xybP3y66ibqc1",
+      "barcode": "611247373064",
+      "amazon": "B07G14HTBZ",
+      "model": "K-Mini",
+      "mpn": "5000200237",
+      "images": ["https://images.shopsavvy.com/k-mini.jpg", "https://images.shopsavvy.com/k-mini-2.jpg"],
+      "title_short": "Keurig K-Mini",
+      "slug": "keurig-k-mini-single-serve-coffee-maker-black",
+      "description": "Brews any cup size between 6-12oz.",
+      "categories": ["Home & Kitchen", "Coffee Makers"],
+      "attributes": { "Capacity": "12 oz", "Color": "Black" },
+      "rating": { "value": 4.6, "count": 91234 },
+      "keywords": ["single serve", "coffee maker"],
+      "identifiers": { "amazon": "B07G14HTBZ", "upc": "611247373064" },
+      "offers": [
+        {
+          "id": "o_amazon_b07g14htbz",
+          "availability": "in",
+          "condition": "new",
+          "retailer": "Amazon",
+          "currency": "USD",
+          "price": 59.99,
+          "seller": "Amazon.com",
+          "URL": "https://www.amazon.com/dp/B07G14HTBZ",
+          "timestamp": "2026-09-26T18:04:11.000Z",
+          "history": []
+        },
+        {
+          "id": "o_walmart_611247373064",
+          "condition": "new",
+          "retailer": "Walmart",
+          "currency": "USD",
+          "price": 64.5,
+          "URL": "https://www.walmart.com/ip/123456",
+          "timestamp": "2026-09-25T09:12:00.000Z",
+          "history": []
+        },
+        {
+          "id": "o_target_611247373064",
+          "availability": "out",
+          "condition": "new",
+          "retailer": "Target",
+          "currency": "USD",
+          "price": 69.99,
+          "URL": "https://www.target.com/p/-/A-54321",
+          "timestamp": "2026-09-24T12:00:00.000Z",
+          "history": []
+        }
+      ]
+    },
+    {
+      "title": "Keurig K-Elite Single Serve Coffee Maker",
+      "category": null,
+      "brand": "Keurig",
+      "shopsavvy": "products/DrKWneG0MpFlZpwZXNYa",
+      "barcode": "611247369449",
+      "images": [],
+      "offers": []
+    }
+  ],
+  "meta": {
+    "request_id": "req_offers_01",
+    "credits_used": 3,
+    "credits_remaining": 997,
+    "rate_limit_remaining": 58
+  }
+}

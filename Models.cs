@@ -276,40 +276,23 @@ namespace ShopSavvy.DataApi
     }
 
     /// <summary>
-    /// Product with nested offers (returned by offers endpoint)
+    /// One product in a <c>GET /products/offers</c> response, as returned by
+    /// <c>GetOffersAsync</c> / <c>GetOffersBatchAsync</c>: every product field the products
+    /// endpoint returns (title, identifiers, images, description, rating, score, …) plus the
+    /// product's current <see cref="Offers"/>.
+    ///
+    /// Until 1.4.0 this class re-declared only the ten core product fields, so the expanded
+    /// fields the API sends on this endpoint (<c>title_short</c>, <c>slug</c>,
+    /// <c>description</c>, <c>categories</c>, <c>attributes</c>, <c>rating</c>, <c>score</c>,
+    /// <c>keywords</c>, <c>identifiers</c>) were silently dropped.
     /// </summary>
-    public class ProductWithOffers
+    public class ProductWithOffers : ProductDetails
     {
-        [JsonProperty("title")]
-        public string Title { get; set; } = string.Empty;
-
-        [JsonProperty("shopsavvy")]
-        public string Shopsavvy { get; set; } = string.Empty;
-
-        [JsonProperty("brand")]
-        public string? Brand { get; set; }
-
-        [JsonProperty("category")]
-        public string? Category { get; set; }
-
-        [JsonProperty("images")]
-        public string[]? Images { get; set; }
-
-        [JsonProperty("barcode")]
-        public string? Barcode { get; set; }
-
-        [JsonProperty("amazon")]
-        public string? Amazon { get; set; }
-
-        [JsonProperty("model")]
-        public string? Model { get; set; }
-
-        [JsonProperty("mpn")]
-        public string? Mpn { get; set; }
-
-        [JsonProperty("color")]
-        public string? Color { get; set; }
-
+        /// <summary>
+        /// Current offers for this product (filtered to one retailer when a retailer was
+        /// requested). Each offer's <see cref="Offer.History"/> is empty on this endpoint; use
+        /// <c>GetPriceHistoryAsync</c> for history.
+        /// </summary>
         [JsonProperty("offers")]
         public Offer[] Offers { get; set; } = Array.Empty<Offer>();
     }
@@ -384,7 +367,8 @@ namespace ShopSavvy.DataApi
         public string? Currency { get; set; }
 
         /// <summary>
-        /// Availability status
+        /// Availability: <c>"in"</c>, <c>"out"</c>, <c>"limited"</c>, <c>"pre-order"</c>,
+        /// <c>"coming-soon"</c> or <c>"discontinued"</c>. Null when unknown — the API omits the key.
         /// </summary>
         [JsonProperty("availability")]
         public string? Availability { get; set; }
