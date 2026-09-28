@@ -150,7 +150,7 @@ Console.WriteLine($"📊 Average price: ${offers.Data.Average(o => o.Price):F2}"
 Console.WriteLine($"💡 Potential savings: ${mostExpensive.Price - cheapest.Price:F2}");
 
 // Filter by availability and condition
-var inStockOffers = offers.Data.Where(o => o.Availability == "in_stock").ToArray();
+var inStockOffers = offers.Data.Where(o => o.Availability == "in").ToArray();
 var newConditionOffers = offers.Data.Where(o => o.Condition == "new").ToArray();
 
 Console.WriteLine($"✅ In-stock offers: {inStockOffers.Length}");
@@ -199,7 +199,7 @@ foreach (var (identifier, offers) in batchOffers.Data)
     Console.WriteLine($"{identifier}:");
     Console.WriteLine($"  Best price: {bestOffer.Retailer} - ${bestOffer.Price:F2}");
     Console.WriteLine($"  Total offers: {offers.Length}");
-    Console.WriteLine($"  In stock: {offers.Count(o => o.Availability == "in_stock")}");
+    Console.WriteLine($"  In stock: {offers.Count(o => o.Availability == "in")}");
     Console.WriteLine();
 }
 ```
@@ -306,6 +306,38 @@ foreach (var (retailer, data) in historicalComparison)
     Console.WriteLine($"  Volatility: ${data.Volatility:F2}");
     Console.WriteLine();
 }
+```
+
+### Scheduled Refresh Monitoring
+
+Schedule products to be refreshed `hourly`, `daily` or `weekly` (1 credit per product found).
+The schedule and list calls return `ScheduledProduct` entries — every product field (`Title`,
+`Shopsavvy`, `Barcode`, …) plus `Schedule` and `Retailer`. `Retailer` is null when a product is
+watched across all retailers; on the list, `Schedule` is null for an interval with no Data API
+label. Unscheduling is free and returns only `Success`, `Message` and `Meta` — no per-product data.
+
+```csharp
+// Schedule one product daily at a single retailer
+var scheduled = await client.ScheduleProductMonitoringAsync("012345678901", "daily", "bestbuy.com");
+foreach (var p in scheduled.Data) // data is always a list; unknown identifiers are omitted
+{
+    Console.WriteLine($"{p.Title} ({p.Shopsavvy}) -> {p.Schedule} at {p.Retailer ?? "all retailers"}");
+}
+Console.WriteLine($"Credits used: {scheduled.CreditsUsed()}");
+
+// Schedule several products hourly across all retailers
+var batch = await client.ScheduleProductMonitoringBatchAsync(new[] { "012345678901", "B08N5WRWNW" }, "hourly");
+
+// List everything on the schedule
+var list = await client.GetScheduledProductsAsync();
+foreach (var p in list.Data)
+{
+    Console.WriteLine($"{p.Title}: {p.Schedule ?? "custom interval"}{(p.Retailer != null ? $" @ {p.Retailer}" : "")}");
+}
+
+// Unschedule (single or batch) — no data, just a confirmation
+var removed = await client.RemoveProductsFromScheduleAsync(new[] { "012345678901", "B08N5WRWNW" });
+Console.WriteLine($"{removed.Success}: {removed.Message}");
 ```
 
 ## 🚀 Production Deployment
