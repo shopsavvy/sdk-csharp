@@ -301,12 +301,11 @@ namespace ShopSavvy.DataApi
         /// </summary>
         /// <param name="identifier">Product identifier</param>
         /// <param name="frequency">How often to refresh ('hourly', 'daily', 'weekly')</param>
-        /// <param name="retailer">Optional retailer to monitor</param>
+        /// <param name="retailer">Optional retailer domain to monitor (e.g. "amazon.com")</param>
         /// <returns>Scheduling confirmation</returns>
         public async Task<ApiResponse<ScheduleResponse>> ScheduleProductMonitoringAsync(string identifier, string frequency, string? retailer = null)
         {
-            var body = new { identifier, frequency, retailer };
-            return await MakeRequestAsync<ScheduleResponse>("POST", "/products/schedule", body: body);
+            return await MakeRequestAsync<ScheduleResponse>("PUT", "/products/scheduled", ScheduleQueryParams(new[] { identifier }, frequency, retailer));
         }
 
         /// <summary>
@@ -314,12 +313,11 @@ namespace ShopSavvy.DataApi
         /// </summary>
         /// <param name="identifiers">Array of product identifiers</param>
         /// <param name="frequency">How often to refresh</param>
-        /// <param name="retailer">Optional retailer to monitor</param>
+        /// <param name="retailer">Optional retailer domain to monitor (e.g. "amazon.com")</param>
         /// <returns>Scheduling confirmation for all products</returns>
         public async Task<ApiResponse<ScheduleBatchResponse[]>> ScheduleProductMonitoringBatchAsync(string[] identifiers, string frequency, string? retailer = null)
         {
-            var body = new { identifiers = string.Join(",", identifiers), frequency, retailer };
-            return await MakeRequestAsync<ScheduleBatchResponse[]>("POST", "/products/schedule", body: body);
+            return await MakeRequestAsync<ScheduleBatchResponse[]>("PUT", "/products/scheduled", ScheduleQueryParams(identifiers, frequency, retailer));
         }
 
         /// <summary>
@@ -338,8 +336,8 @@ namespace ShopSavvy.DataApi
         /// <returns>Removal confirmation</returns>
         public async Task<ApiResponse<RemoveResponse>> RemoveProductFromScheduleAsync(string identifier)
         {
-            var body = new { identifier };
-            return await MakeRequestAsync<RemoveResponse>("DELETE", "/products/schedule", body: body);
+            var queryParams = new Dictionary<string, string> { { "ids", identifier } };
+            return await MakeRequestAsync<RemoveResponse>("DELETE", "/products/scheduled", queryParams);
         }
 
         /// <summary>
@@ -349,8 +347,30 @@ namespace ShopSavvy.DataApi
         /// <returns>Removal confirmation for all products</returns>
         public async Task<ApiResponse<RemoveBatchResponse[]>> RemoveProductsFromScheduleAsync(string[] identifiers)
         {
-            var body = new { identifiers = string.Join(",", identifiers) };
-            return await MakeRequestAsync<RemoveBatchResponse[]>("DELETE", "/products/schedule", body: body);
+            var queryParams = new Dictionary<string, string> { { "ids", string.Join(",", identifiers) } };
+            return await MakeRequestAsync<RemoveBatchResponse[]>("DELETE", "/products/scheduled", queryParams);
+        }
+
+        /// <summary>
+        /// Query string for PUT /products/scheduled.
+        ///
+        /// The schedule/unschedule handlers read ONLY query parameters — <c>ids</c>
+        /// (comma-separated), <c>schedule</c> and optional <c>retailer</c>. These methods used
+        /// to POST/DELETE a JSON body (<c>identifier</c>/<c>frequency</c>) to /products/schedule,
+        /// which the server ignores entirely, so every call failed for want of <c>ids</c>.
+        /// </summary>
+        private static Dictionary<string, string> ScheduleQueryParams(string[] identifiers, string frequency, string? retailer)
+        {
+            var queryParams = new Dictionary<string, string>
+            {
+                { "ids", string.Join(",", identifiers) },
+                { "schedule", frequency }
+            };
+            if (retailer != null && retailer.Length > 0)
+            {
+                queryParams["retailer"] = retailer;
+            }
+            return queryParams;
         }
 
         /// <summary>
