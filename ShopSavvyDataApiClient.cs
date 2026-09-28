@@ -26,6 +26,19 @@ namespace ShopSavvy.DataApi
     {
         private readonly HttpClient _httpClient;
         private readonly ShopSavvyConfig _config;
+
+        /// <summary>
+        /// Absolute API root every request is built from (e.g. https://api.shopsavvy.com/v1),
+        /// with no trailing slash.
+        ///
+        /// Requests are built as <c>_baseUrl + "/products/..."</c> rather than resolved against
+        /// <see cref="HttpClient.BaseAddress"/>: resolving a root-relative path like
+        /// <c>/products</c> against <c>https://api.shopsavvy.com/v1</c> REPLACES the path, so
+        /// every call went to <c>https://api.shopsavvy.com/products</c> with the <c>/v1</c>
+        /// silently dropped. The deals/batch/webhook/review methods also referenced this field
+        /// before it was ever declared, so the package did not compile at all from 1.1.0 on.
+        /// </summary>
+        private readonly string _baseUrl;
         private bool _disposed = false;
 
         /// <summary>
@@ -49,6 +62,17 @@ namespace ShopSavvy.DataApi
         /// </summary>
         /// <param name="config">Client configuration</param>
         public ShopSavvyDataApiClient(ShopSavvyConfig config)
+            : this(config, null)
+        {
+        }
+
+        /// <summary>
+        /// Initialize a new ShopSavvy Data API client that sends its requests through a custom
+        /// <see cref="HttpMessageHandler"/> — for proxies, logging/retry handlers, or tests.
+        /// </summary>
+        /// <param name="config">Client configuration</param>
+        /// <param name="handler">Handler to send requests through; the default handler when null. Disposed with the client.</param>
+        public ShopSavvyDataApiClient(ShopSavvyConfig config, HttpMessageHandler? handler)
         {
             _config = config ?? throw new ArgumentNullException(nameof(config));
 
@@ -63,12 +87,11 @@ namespace ShopSavvy.DataApi
                 throw new ArgumentException("Invalid API key format. API keys should start with ss_live_ or ss_test_", nameof(config));
             }
 
+            _baseUrl = _config.BaseUrl.TrimEnd('/');
+
             // Create HTTP client
-            _httpClient = new HttpClient
-            {
-                BaseAddress = new Uri(_config.BaseUrl),
-                Timeout = _config.Timeout
-            };
+            _httpClient = handler == null ? new HttpClient() : new HttpClient(handler);
+            _httpClient.Timeout = _config.Timeout;
 
             _httpClient.DefaultRequestHeaders.Add("Authorization", $"Bearer {_config.ApiKey}");
             _httpClient.DefaultRequestHeaders.Add("User-Agent", $"ShopSavvy-CSharp-SDK/{ShopSavvySdk.Version}");
@@ -425,7 +448,7 @@ namespace ShopSavvy.DataApi
 
         private async Task<ApiResponse<T>> MakeRequestAsync<T>(string method, string endpoint, Dictionary<string, string>? queryParams = null, object? body = null)
         {
-            var url = endpoint;
+            var url = _baseUrl + endpoint;
             if (queryParams != null && queryParams.Count > 0)
             {
                 var query = string.Join("&", queryParams.Select(kvp => $"{Uri.EscapeDataString(kvp.Key)}={Uri.EscapeDataString(kvp.Value)}"));
@@ -468,7 +491,7 @@ namespace ShopSavvy.DataApi
 
         private async Task<T> MakeRequestDirectAsync<T>(string method, string endpoint, Dictionary<string, string>? queryParams = null, object? body = null)
         {
-            var url = endpoint;
+            var url = _baseUrl + endpoint;
             if (queryParams != null && queryParams.Count > 0)
             {
                 var query = string.Join("&", queryParams.Select(kvp => $"{Uri.EscapeDataString(kvp.Key)}={Uri.EscapeDataString(kvp.Value)}"));
