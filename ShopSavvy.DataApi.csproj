@@ -7,7 +7,7 @@
     <Authors>ShopSavvy by Monolith Technologies, Inc.</Authors>
     <Company>ShopSavvy by Monolith Technologies, Inc.</Company>
     <Product>ShopSavvy Data API SDK</Product>
-    <Description>Official C# SDK for ShopSavvy Data API - Access product data, pricing, and price history across thousands of retailers and millions of products.</Description>
+    <Description>Official C# SDK for ShopSavvy Data API - Access product data, pricing, and price history across tens of thousands of retailers and 30M+ products.</Description>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <PackageProjectUrl>https://shopsavvy.com/data</PackageProjectUrl>
     <RepositoryUrl>https://github.com/shopsavvy/sdk-csharp</RepositoryUrl>
