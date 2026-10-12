@@ -5,7 +5,7 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Documentation](https://img.shields.io/badge/docs-shopsavvy.com-blue)](https://shopsavvy.com/data/documentation)
 
-Official C# SDK for the [ShopSavvy Data API](https://shopsavvy.com/data). Access comprehensive product data, real-time pricing, and historical price trends across **thousands of retailers** and **millions of products**.
+Official C# SDK for the [ShopSavvy Data API](https://shopsavvy.com/data). Access comprehensive product data, real-time pricing, and historical price trends across **tens of thousands of retailers** and **tens of millions of products**.
 
 ## ⚡ 30-Second Quick Start
 
@@ -100,7 +100,7 @@ if (!string.IsNullOrEmpty(product.Data.Model))
 
 #### Bulk Product Lookup
 ```csharp
-// Process up to 100 products at once (Pro plan)
+// Up to 100 identifiers per request
 var identifiers = new[]
 {
     "012345678901", "B08N5WRWNW", "045496590048",
@@ -316,7 +316,7 @@ foreach (var (retailer, data) in historicalComparison)
 
 ### Scheduled Refresh Monitoring
 
-Schedule products to be refreshed `hourly`, `daily` or `weekly` (1 credit per product found).
+Schedule products to be refreshed `hourly`, `daily` or `weekly` (credit costs are in the [API documentation](https://shopsavvy.com/data/documentation)).
 The schedule and list calls return `ScheduledProduct` entries — every product field (`Title`,
 `Shopsavvy`, `Barcode`, …) plus `Schedule` and `Retailer`. `Retailer` is null when a product is
 watched across all retailers; on the list, `Schedule` is null for an interval with no Data API
@@ -558,7 +558,7 @@ ShopSavvy has been comparing prices since 2008, and the app has 40M+ downloads. 
 - **JSON or CSV** responses, with credits used and remaining on every response
 - **Open-source SDKs in 10 languages**: Python, TypeScript, Go, Rust, Java, Kotlin, Swift, PHP, Ruby and C#
 
-Plans and the 14-day Starter trial are at [shopsavvy.com/data](https://shopsavvy.com/data); full reference at [shopsavvy.com/data/documentation](https://shopsavvy.com/data/documentation).
+Plans and the 14-day trial are at [shopsavvy.com/data](https://shopsavvy.com/data); full reference at [shopsavvy.com/data/documentation](https://shopsavvy.com/data/documentation).
 
 ---
 
