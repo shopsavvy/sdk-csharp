@@ -7,6 +7,18 @@
 
 Official C# SDK for the [ShopSavvy Data API](https://shopsavvy.com/data). Access comprehensive product data, real-time pricing, and historical price trends across **tens of thousands of retailers** and **30M+ products**.
 
+### In-Store Prices (user-collected)
+
+Each product from the current-offers call also carries `in_store_prices`: shelf prices physical stores charged, read from receipts ShopSavvy app users scanned. Every entry is labeled `source: "user-collected"` and has the retailer, the store's address and coordinates, the price and the receipt date (`observed_on`). It is a price on that day, not current stock, and says nothing about the shopper. Empty when none are on file.
+
+```csharp
+var response = await client.GetOffersAsync("011110838360");
+foreach (var inStore in response.Data[0].InStorePrices)
+{
+    Console.WriteLine($"{inStore.Retailer} ({inStore.Store.Address}): ${inStore.Price} on {inStore.ObservedOn}");
+}
+```
+
 ## ⚡ 30-Second Quick Start
 
 ```csharp
@@ -40,7 +52,7 @@ dotnet add package ShopSavvy.Sdk
 ### PackageReference
 
 ```xml
-<PackageReference Include="ShopSavvy.Sdk" Version="1.4.0" />
+<PackageReference Include="ShopSavvy.Sdk" Version="1.5.0" />
 ```
 
 ### Get Your API Key

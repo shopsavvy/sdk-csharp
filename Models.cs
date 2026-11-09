@@ -9,7 +9,7 @@ namespace ShopSavvy.DataApi
     /// </summary>
     public static class ShopSavvySdk
     {
-        public const string Version = "1.4.0";
+        public const string Version = "1.5.0";
     }
 
     /// <summary>
@@ -295,6 +295,62 @@ namespace ShopSavvy.DataApi
         /// </summary>
         [JsonProperty("offers")]
         public Offer[] Offers { get; set; } = Array.Empty<Offer>();
+
+        /// <summary>
+        /// User-collected in-store shelf prices read from shoppers' scanned receipts. Empty when
+        /// none are on file (and on price history responses).
+        /// </summary>
+        [JsonProperty("in_store_prices")]
+        public InStorePrice[] InStorePrices { get; set; } = Array.Empty<InStorePrice>();
+    }
+
+    /// <summary>
+    /// A shelf price a physical store charged on a given day, read from a shopper's scanned
+    /// receipt. <see cref="Source"/> is always "user-collected". It says what the store sold the
+    /// product for that day, not that it is in stock now; nothing about the shopper is included.
+    /// </summary>
+    public class InStorePrice
+    {
+        /// <summary>Always "user-collected".</summary>
+        [JsonProperty("source")]
+        public string Source { get; set; } = "user-collected";
+
+        /// <summary>Retailer name, e.g. "Kroger".</summary>
+        [JsonProperty("retailer")]
+        public string? Retailer { get; set; }
+
+        /// <summary>The store the price was charged at.</summary>
+        [JsonProperty("store")]
+        public InStoreLocation Store { get; set; } = new InStoreLocation();
+
+        /// <summary>Unit shelf price paid (the median when several receipts from the store agree).</summary>
+        [JsonProperty("price")]
+        public double Price { get; set; }
+
+        /// <summary>ISO 4217 currency of <see cref="Price"/>.</summary>
+        [JsonProperty("currency")]
+        public string Currency { get; set; } = string.Empty;
+
+        /// <summary>YYYY-MM-DD date of the most recent receipt behind the price.</summary>
+        [JsonProperty("observed_on")]
+        public string? ObservedOn { get; set; }
+
+        /// <summary>When ShopSavvy last updated this price (ISO 8601).</summary>
+        [JsonProperty("timestamp")]
+        public string? Timestamp { get; set; }
+    }
+
+    /// <summary>The store an <see cref="InStorePrice"/> was charged at.</summary>
+    public class InStoreLocation
+    {
+        [JsonProperty("address")]
+        public string? Address { get; set; }
+
+        [JsonProperty("latitude")]
+        public double? Latitude { get; set; }
+
+        [JsonProperty("longitude")]
+        public double? Longitude { get; set; }
     }
 
     /// <summary>
